@@ -12,13 +12,10 @@ import java.util.List;
 @RestController
 public class CategoryController {
 
-    // 카테고리 타입의 리스트
     private List<Category> categories = new ArrayList<>();
 
-    // 해당 url로 get 요청이 오면 실행
     @GetMapping("/api/public/categories")
     public List<Category> getAllCategories(){
-
         return categories;
     }
 
