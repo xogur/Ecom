@@ -14,6 +14,7 @@ public class CategoryServiceImpl implements CategoryService{
     // 카테고리 데이터를 담을 **리스트 (메모리 저장소)**입니다.
     // 이 리스트는 DB가 없는 상황에서 임시로 사용하는 저장소로 볼 수 있어요.
     private List<Category> categories = new ArrayList<>();
+    private Long nextId = 1L;
 
     @Override
     public List<Category> getAllCategories() {
@@ -22,6 +23,8 @@ public class CategoryServiceImpl implements CategoryService{
 
     @Override
     public void createCategory(Category category) {
+        category.setCategoryId(nextId++);
         categories.add(category);
+
     }
 }
