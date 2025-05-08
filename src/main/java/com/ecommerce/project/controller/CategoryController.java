@@ -8,6 +8,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+
+
+
+
 
 
 
@@ -39,10 +46,12 @@ public class CategoryController {
     // 카테고리 삭제하는 API추가
     @DeleteMapping("/api/admin/categories/{categoryId}")
     // @Path Variable은 url에 {categoryId}이런 형식으로 경로에서 categoryId를 꺼내오는 방식
-    public String deleteCategory(@PathVariable Long categoryId){
-        // status는 String타입0
-        // categoryService의 deleteCategory함수를 categoryId파라미터로 실행
-        String status = categoryService.deleteCategory(categoryId);
-        return status;
+    public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId){
+        try {
+            String status = categoryService.deleteCategory(categoryId);
+            return new ResponseEntity<>(status, HttpStatus.OK);
+        } catch (ResponseStatusException e){
+            return new ResponseEntity<>(e.getReason(), e.getStatusCode());
+        }
     }
 }
