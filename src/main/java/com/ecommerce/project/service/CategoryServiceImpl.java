@@ -38,8 +38,10 @@ public class CategoryServiceImpl implements CategoryService{
                 // 람다식으로 각 카테고리 c의 카테고리 아이디를 조회해 입력받은 categoryId와 일치하는것만 추출
                 .filter(c -> c.getCategoryId().equals(categoryId))
                 // 그 중 첫번째 것만 가져옴
-                // 만약 없으면 null
                 .findFirst()
+                // 예외처리 - 만약 없다면 ResponseStatusException는 스프링에서 제공하는 hppt 예외처리
+                // NOT_FOUND에 맞는 상태코드를 사용자에게 반환 (404), 메시지는 Resource not found
+                // 예외를 던짐
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found"));
         if (category == null)
             return "Category not found";

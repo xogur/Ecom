@@ -46,11 +46,17 @@ public class CategoryController {
     // 카테고리 삭제하는 API추가
     @DeleteMapping("/api/admin/categories/{categoryId}")
     // @Path Variable은 url에 {categoryId}이런 형식으로 경로에서 categoryId를 꺼내오는 방식
+    // ResponseEntity<T>는 본문(Body)뿐만 아니라 HTTP 상태 코드도 함께 설정 가능
     public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId){
         try {
+            // deleteCategory함수를 실행
+            // status를 반환하고 상태코드는 200
             String status = categoryService.deleteCategory(categoryId);
             return new ResponseEntity<>(status, HttpStatus.OK);
+
+            // 예외처리
         } catch (ResponseStatusException e){
+            // 예외가 던진 메시지, 상태코드
             return new ResponseEntity<>(e.getReason(), e.getStatusCode());
         }
     }
