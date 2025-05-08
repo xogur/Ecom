@@ -33,14 +33,15 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping("/api/public/categories")
-    public List<Category> getAllCategories(){
-        return categoryService.getAllCategories();
+    public ResponseEntity<List<Category>> getAllCategories(){
+        List<Category> categories = categoryService.getAllCategories();
+        return new ResponseEntity<>(categories, HttpStatus.OK);
     }
 
     @PostMapping("/api/public/categories")
-    public String createCategory(@RequestBody Category category){
+    public ResponseEntity<String> createCategory(@RequestBody Category category){
         categoryService.createCategory(category);
-        return "Category added successfully";
+        return new ResponseEntity<>("Category added successfully", HttpStatus.CREATED);
     }
 
     // 카테고리 삭제하는 API추가
@@ -52,7 +53,8 @@ public class CategoryController {
             // deleteCategory함수를 실행
             // status를 반환하고 상태코드는 200
             String status = categoryService.deleteCategory(categoryId);
-            return new ResponseEntity<>(status, HttpStatus.OK);
+            // return new ResponseEntity<>(status, HttpStatus.OK);
+            return ResponseEntity.status(HttpStatus.OK).body(status);
 
             // 예외처리
         } catch (ResponseStatusException e){
