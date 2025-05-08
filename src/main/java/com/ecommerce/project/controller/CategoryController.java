@@ -36,8 +36,12 @@ public class CategoryController {
         return "Category added successfully";
     }
 
+    // 카테고리 삭제하는 API추가
     @DeleteMapping("/api/admin/categories/{categoryId}")
+    // @Path Variable은 url에 {categoryId}이런 형식으로 경로에서 categoryId를 꺼내오는 방식
     public String deleteCategory(@PathVariable Long categoryId){
+        // status는 String타입0
+        // categoryService의 deleteCategory함수를 categoryId파라미터로 실행
         String status = categoryService.deleteCategory(categoryId);
         return status;
     }

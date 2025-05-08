@@ -28,10 +28,16 @@ public class CategoryServiceImpl implements CategoryService{
 
     }
 
+    // 인터페이스의 deleteCategory함수를 오버라이딩
     @Override
     public String deleteCategory(Long categoryId) {
+        // stream은 categories에서 순회하겠다는 의미
         Category category = categories.stream()
+                // filter는 조건
+                // 람다식으로 각 카테고리 c의 카테고리 아이디를 조회해 입력받은 categoryId와 일치하는것만 추출
                 .filter(c -> c.getCategoryId().equals(categoryId))
+                // 그 중 첫번째 것만 가져옴
+                // 만약 없으면 null
                 .findFirst().orElse(null);
         if (category == null)
             return "Category not found";

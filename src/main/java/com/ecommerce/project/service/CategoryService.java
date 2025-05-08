@@ -9,6 +9,7 @@ public interface CategoryService {
     List<Category> getAllCategories();
     // 전달된 카테고리 객체를 DB에 저장하는 메서드 (등록용)
     void createCategory(Category category);
-
+    // 해당 함수는 String타입
+    // 카테고리를 삭제하는 함수
     String deleteCategory(Long categoryId);
 }
