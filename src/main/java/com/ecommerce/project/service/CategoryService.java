@@ -12,4 +12,8 @@ public interface CategoryService {
     // 해당 함수는 String타입
     // 카테고리를 삭제하는 함수
     String deleteCategory(Long categoryId);
+
+    // 카테고리 수정
+    // 카테고리 타입
+    Category updateCategory(Category category, Long categoryId);
 }

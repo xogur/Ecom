@@ -12,12 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-
-
-
-
-
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,14 +27,19 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping("/api/public/categories")
+    // http 상태코드를 설정하기 위해 ResponseEntity 를 사용
     public ResponseEntity<List<Category>> getAllCategories(){
         List<Category> categories = categoryService.getAllCategories();
+        // 조회된 categories와 상태코드 200을 반환
         return new ResponseEntity<>(categories, HttpStatus.OK);
     }
 
     @PostMapping("/api/public/categories")
+    // http 상태코드를 설정하기 위해 ResponseEntity 를 사용
+    // 페이로드의 데이터를 받기 위해 @RequestBody를 사용
     public ResponseEntity<String> createCategory(@RequestBody Category category){
         categoryService.createCategory(category);
+        // "Category added successfully"를 클라이언트에 반환하고 상태코드 201반환
         return new ResponseEntity<>("Category added successfully", HttpStatus.CREATED);
     }
 
@@ -54,11 +53,28 @@ public class CategoryController {
             // status를 반환하고 상태코드는 200
             String status = categoryService.deleteCategory(categoryId);
             // return new ResponseEntity<>(status, HttpStatus.OK);
+
+            // 상태코드 200을 반환하고 페이로드에 status를 담음
             return ResponseEntity.status(HttpStatus.OK).body(status);
 
             // 예외처리
         } catch (ResponseStatusException e){
             // 예외가 던진 메시지, 상태코드
+            return new ResponseEntity<>(e.getReason(), e.getStatusCode());
+        }
+    }
+
+    // 클라이언트에서 /api/public/categories/{categoryId} 요청이 오면 실행
+    // put 메소드를 사용
+    @PutMapping("/api/public/categories/{categoryId}")
+    // 페이로드에 담긴 데이터를 category에 담고, {categoryId}를 categoryId를 담음
+    public ResponseEntity<String> updateCategory(@RequestBody Category category,
+                                                 @PathVariable Long categoryId){
+        try{
+            // updateCategory함수를 실행
+            Category savedCategory = categoryService.updateCategory(category, categoryId);
+            return new ResponseEntity<>("Category with category id: " + categoryId, HttpStatus.OK);
+        } catch (ResponseStatusException e){
             return new ResponseEntity<>(e.getReason(), e.getStatusCode());
         }
     }

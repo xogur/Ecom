@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+
 
 // @Service: 이 클래스는 **스프링이 관리하는 서비스 빈(Bean)**이라는 뜻입니다.
 // 컨트롤러 등에서 @Autowired로 주입받을 수 있게 됩니다.
@@ -48,5 +51,21 @@ public class CategoryServiceImpl implements CategoryService{
 
         categories.remove(category);
         return "Category with categoryId: " + categoryId + " deleted successfully !!";
+    }
+
+
+    @Override
+    public Category updateCategory(Category category, Long categoryId) {
+        Optional<Category> optionalCategory = categories.stream()
+                .filter(c -> c.getCategoryId().equals(categoryId))
+                .findFirst();
+
+        if(optionalCategory.isPresent()){
+            Category existingCategory = optionalCategory.get();
+            existingCategory.setCategoryName(category.getCategoryName());
+            return existingCategory;
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found");
+        }
     }
 }
