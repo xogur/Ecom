@@ -55,13 +55,18 @@ public class CategoryServiceImpl implements CategoryService{
 
 
     @Override
+    // 현재 category에는 클라이언트에서 보낸 수정할 데이터가 담겨져 있음
     public Category updateCategory(Category category, Long categoryId) {
+        // Optional은 값이 없을수도 있다는 가정을 명확하게 하기 위해 사용
         Optional<Category> optionalCategory = categories.stream()
                 .filter(c -> c.getCategoryId().equals(categoryId))
                 .findFirst();
 
         if(optionalCategory.isPresent()){
+            // Optional의 get() 함수는 실제 값을 꺼냄
             Category existingCategory = optionalCategory.get();
+            // 실제 값이 저장된 existingCategory의 카테고리 이름을 클라이언트에서 보낸 수정할 데이터가 담겨져 있는
+            // category에서 꺼내서 적용
             existingCategory.setCategoryName(category.getCategoryName());
             return existingCategory;
         } else {
