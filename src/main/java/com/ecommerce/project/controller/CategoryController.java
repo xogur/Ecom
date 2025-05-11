@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-
+//
 // @RestController는 http요청을 처리하는 메소드 임을 나타냄
 // 내부 메서드가 반환하는 객체는 자동으로 JSON 형태로 응답됩니다.
 // 즉, @ResponseBody가 자동으로 붙음
