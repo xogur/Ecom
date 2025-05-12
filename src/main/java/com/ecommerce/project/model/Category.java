@@ -1,6 +1,8 @@
 package com.ecommerce.project.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 
 // @Entity 는 데이터 베이스와 해당 클래스가 매핑이 되도록 연결
 @Entity(name = "categories")
@@ -14,6 +16,8 @@ public class Category {
     // JPA 데이터를 조회/수정 등을 처리할때 기본키를 기준으로 조회하기 때문에 필수
     @Id
     // 카테고리 아이디
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // 해당 필드의 값을 자동으로 생성해줌
     private Long categoryId;
     // 카테고리 이름
     private String categoryName;
@@ -22,6 +26,11 @@ public class Category {
     public Category(Long categoryId, String categoryName) {
         this.categoryId = categoryId;
         this.categoryName = categoryName;
+    }
+
+    // JPA가 데이터를 DB에서 조회할 때 생성자가 필수
+    public Category() {
+
     }
 
     // 게터세터
