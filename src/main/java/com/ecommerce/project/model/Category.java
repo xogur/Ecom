@@ -1,8 +1,13 @@
 package com.ecommerce.project.model;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity(name = "categories")
 
 // 카테고리 모델
 public class Category {
 
+    @Id
     // 카테고리 아이디
     private Long categoryId;
     // 카테고리 이름
