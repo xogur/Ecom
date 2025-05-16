@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,9 @@ public class CategoryController {
     @PostMapping("/public/categories")
     // http 상태코드를 설정하기 위해 ResponseEntity 를 사용
     // 페이로드의 데이터를 받기 위해 @RequestBody를 사용
-    public ResponseEntity<String> createCategory(@RequestBody Category category){
+    // @Valid 는 @RequestBody로 들어온 Category 객체의 필드들에 대해,notnull등을 감지하고 검증해 준다
+    // 만약 @Valid가 없으면 500으로 서버 에러가 발생하는 반면 @Valid를 추가하면 해당 필드의 형식에 맞는지 검증을 해주기 때문에 틀리면 400에러가 발생함
+    public ResponseEntity<String> createCategory(@Valid @RequestBody Category category){
         categoryService.createCategory(category);
         // "Category added successfully"를 클라이언트에 반환하고 상태코드 201반환
         return new ResponseEntity<>("Category added successfully", HttpStatus.CREATED);
