@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 // @Entity 는 데이터 베이스와 해당 클래스가 매핑이 되도록 연결
 @Entity(name = "categories")
@@ -28,6 +29,7 @@ public class Category {
     private Long categoryId;
     // 카테고리 이름
     @NotBlank
+    @Size(min = 5, message = "Category name must contain atleast 5 characters")
     private String categoryName;
 
     // 카테고리 생성자/ 카테고리 아이디와, 이름 변수에 저장
