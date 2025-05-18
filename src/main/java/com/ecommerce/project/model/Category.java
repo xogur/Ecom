@@ -29,7 +29,7 @@ public class Category {
     private Long categoryId;
     // 카테고리 이름
     @NotBlank
-    @Size(min = 5, message = "Category name must contain atleast 5 characters")
+    @Size(min = 2, message = "Category name must contain atleast 2 characters")
     private String categoryName;
 
     // 카테고리 생성자/ 카테고리 아이디와, 이름 변수에 저장
