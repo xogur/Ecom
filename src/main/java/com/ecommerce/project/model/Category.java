@@ -29,6 +29,7 @@ public class Category {
     private Long categoryId;
     // 카테고리 이름
     @NotBlank
+    //유효성 검사 어노테이션
     @Size(min = 2, message = "Category name must contain atleast 2 characters")
     private String categoryName;
 
