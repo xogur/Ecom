@@ -22,7 +22,7 @@ public class CategoryServiceImpl implements CategoryService{
     // 카테고리 데이터를 담을 **리스트 (메모리 저장소)**입니다.
     // 이 리스트는 DB가 없는 상황에서 임시로 사용하는 저장소로 볼 수 있어요.
     // private List<Category> categories = new ArrayList<>();
-    private Long nextId = 1L;
+
 
     // 스프링 부트가 자동으로 CategoryRepository categoryRepository = new CategoryRepository();
     // 이런식으로 객체를 만들어 줌
