@@ -8,4 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 // JpaRepository를 상속함으로써 가능
 //
 public interface CategoryRepository extends JpaRepository<Category,Long> {
+    Category findByCategoryName(String categoryName);
 }
