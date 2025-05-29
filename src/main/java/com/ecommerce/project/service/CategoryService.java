@@ -14,9 +14,9 @@ public interface CategoryService {
     // 전달된 카테고리 객체를 DB에 저장하는 메서드 (등록용)
     // 해당 함수는 String타입
     // 카테고리를 삭제하는 함수
-    String deleteCategory(Long categoryId);
+    CategoryDTO deleteCategory(Long categoryId);
 
     // 카테고리 수정
     // 카테고리 타입
-    Category updateCategory(Category category, Long categoryId);
+    CategoryDTO updateCategory(CategoryDTO categoryDTO, Long categoryId);
 }

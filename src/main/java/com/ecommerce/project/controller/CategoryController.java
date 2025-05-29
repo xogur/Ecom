@@ -50,12 +50,9 @@ public class CategoryController {
     @DeleteMapping("/admin/categories/{categoryId}")
     // @Path Variable은 url에 {categoryId}이런 형식으로 경로에서 categoryId를 꺼내오는 방식
     // ResponseEntity<T>는 본문(Body)뿐만 아니라 HTTP 상태 코드도 함께 설정 가능
-    public ResponseEntity<String> deleteCategory(@PathVariable Long categoryId){
-        // deleteCategory함수를 실행
-        // status를 반환하고 상태코드는 200
-        String status = categoryService.deleteCategory(categoryId);
-
-        return new ResponseEntity<>(status, HttpStatus.OK);
+    public ResponseEntity<CategoryDTO> deleteCategory(@PathVariable Long categoryId){
+        CategoryDTO deletedCategory = categoryService.deleteCategory(categoryId);
+        return new ResponseEntity<>(deletedCategory, HttpStatus.OK);
 
 
     }
@@ -64,12 +61,12 @@ public class CategoryController {
     // put 메소드를 사용
     @PutMapping("/public/categories/{categoryId}")
     // 페이로드에 담긴 데이터를 category에 담고, {categoryId}를 categoryId를 담음
-    public ResponseEntity<String> updateCategory(@Valid @RequestBody Category category,
+    public ResponseEntity<CategoryDTO> updateCategory(@Valid @RequestBody CategoryDTO categoryDTO,
                                                  @PathVariable Long categoryId){
 
             // updateCategory함수를 실행
-        Category savedCategory = categoryService.updateCategory(category, categoryId);
-        return new ResponseEntity<>("Category with category id: " + categoryId, HttpStatus.OK);
+        CategoryDTO savedCategoryDTO = categoryService.updateCategory(categoryDTO, categoryId);
+        return new ResponseEntity<>(savedCategoryDTO, HttpStatus.OK);
 
     }
 }

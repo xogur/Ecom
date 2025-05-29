@@ -67,31 +67,32 @@ public class CategoryServiceImpl implements CategoryService{
 
     // 인터페이스의 deleteCategory함수를 오버라이딩
     @Override
-    public String deleteCategory(Long categoryId) {
+    public CategoryDTO deleteCategory(Long categoryId) {
 
         //
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category","categoryId",categoryId));
-        if (category == null)
-            return "Category not found";
+
 
         categoryRepository.delete(category);
-        return "Category with categoryId: " + categoryId + " deleted successfully !!";
+        return modelMapper.map(category, CategoryDTO.class);
     }
 
 
     @Override
     // 현재 category에는 클라이언트에서 보낸 수정할 데이터가 담겨져 있음
-    public Category updateCategory(Category category, Long categoryId) {
+    public CategoryDTO updateCategory(CategoryDTO categoryDTO, Long categoryId) {
 
         // 실패했을때는 실패값을 리턴
         Category savedCategory = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category","categoryId",categoryId));
 
+        Category category = modelMapper.map(categoryDTO, Category.class);
+
 
         category.setCategoryId(categoryId);
         // 성공했을때의 리턴값을 다시 정의하기 위해 재정의
         savedCategory = categoryRepository.save(category);
-        return savedCategory;
+        return modelMapper.map(savedCategory, CategoryDTO.class);
     }
 }
