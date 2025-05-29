@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import com.ecommerce.project.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.ecommerce.project.payload.CategoryResponse;
 
 
 
@@ -30,7 +31,7 @@ public class CategoryServiceImpl implements CategoryService{
     private CategoryRepository categoryRepository;
 
     @Override
-    public List<Category> getAllCategories() {
+    public CategoryResponse getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
         if (categories.isEmpty())
             throw new APIException("No category created till now.");
