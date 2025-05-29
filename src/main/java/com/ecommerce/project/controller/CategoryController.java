@@ -29,6 +29,15 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
+    // http://localhost:8080/echo?message=안녕
+    // 이런 식으로 쿼리스트링 형식으로 전달할 메시지를 받음
+    // required = false는 message가 없어도 에러가 안 나도록 해주는 옵션
+    @GetMapping("/echo")
+    public ResponseEntity<String> echoMessage(@RequestParam(name = "message", required = false) String message){
+        //public ResponseEntity<String> echoMessage(@RequestParam(name = "message", defaultValue = "Hello World!") String message){
+        return new ResponseEntity<>("Echoed message: " + message, HttpStatus.OK);
+    }
+
     @GetMapping("/public/categories")
     // http 상태코드를 설정하기 위해 ResponseEntity 를 사용
     public ResponseEntity<CategoryResponse> getAllCategories(){
