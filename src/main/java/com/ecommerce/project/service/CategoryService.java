@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface CategoryService {
     // 모든 카테고리를 리스트 형태로 반환하는 메서드 (조회용)
-    CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize);
+    CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder);
     CategoryDTO createCategory(CategoryDTO categoryDTO);
 
     // 전달된 카테고리 객체를 DB에 저장하는 메서드 (등록용)

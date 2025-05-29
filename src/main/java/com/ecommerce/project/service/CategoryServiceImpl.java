@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.ecommerce.project.payload.CategoryDTO;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Sort;
 import java.util.stream.Collectors;
 import java.util.Optional;
 import com.ecommerce.project.repositories.CategoryRepository;
@@ -40,9 +41,12 @@ public class CategoryServiceImpl implements CategoryService{
     private ModelMapper modelMapper;
 
     @Override
-    public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize) {
-        // 첫 페이지에서 5개 가져오기
-        Pageable pageDetails = PageRequest.of(pageNumber, pageSize);
+    public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
         Page<Category> categoryPage = categoryRepository.findAll(pageDetails);
 
         List<Category> categories = categoryPage.getContent();
