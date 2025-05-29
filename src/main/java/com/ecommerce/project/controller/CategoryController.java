@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.ecommerce.project.payload.CategoryResponse;
 import jakarta.validation.Valid;
 
 import java.util.ArrayList;
@@ -29,10 +30,9 @@ public class CategoryController {
 
     @GetMapping("/public/categories")
     // http 상태코드를 설정하기 위해 ResponseEntity 를 사용
-    public ResponseEntity<List<Category>> getAllCategories(){
-        List<Category> categories = categoryService.getAllCategories();
-        // 조회된 categories와 상태코드 200을 반환
-        return new ResponseEntity<>(categories, HttpStatus.OK);
+    public ResponseEntity<CategoryResponse> getAllCategories(){
+        CategoryResponse categoryResponse = categoryService.getAllCategories();
+        return new ResponseEntity<>(categoryResponse, HttpStatus.OK);
     }
 
     @PostMapping("/public/categories")
