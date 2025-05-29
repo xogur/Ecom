@@ -10,5 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryResponse {
+    // CategoryDTO를 리스트 형식으로 받아서 content라는 이름으로 묶음
+    // content가 상위 컬럼
     private List<CategoryDTO> content;
 }

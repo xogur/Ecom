@@ -42,6 +42,8 @@ public class CategoryServiceImpl implements CategoryService{
         if (categories.isEmpty())
             throw new APIException("No category created till now.");
 
+        // 기존 categories의 데이터들을 각각 category이름으로  -> 옆에있는 함수들을 적용
+        // category를 CategoryDTO형식으로 변환
         List<CategoryDTO> categoryDTOS = categories.stream()
                 .map(category -> modelMapper.map(category, CategoryDTO.class))
                 .toList();
@@ -52,12 +54,14 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
-    public void createCategory(Category category) {
-        Category savedCategory = categoryRepository.findByCategoryName(category.getCategoryName());
-        if (savedCategory != null)
+    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        Category category = modelMapper.map(categoryDTO, Category.class);
+        Category categoryFromDb = categoryRepository.findByCategoryName(category.getCategoryName());
+        if (categoryFromDb != null)
             throw new APIException("Category with the name " + category.getCategoryName() + " already exists !!!");
         // category.setCategoryId(nextId++);
-        categoryRepository.save(category);
+        Category savedCategory = categoryRepository.save(category);
+        return modelMapper.map(savedCategory, CategoryDTO.class);
 
     }
 

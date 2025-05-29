@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.ecommerce.project.payload.CategoryDTO;
 import com.ecommerce.project.payload.CategoryResponse;
 import jakarta.validation.Valid;
 
@@ -40,10 +41,9 @@ public class CategoryController {
     // 페이로드의 데이터를 받기 위해 @RequestBody를 사용
     // @Valid 는 @RequestBody로 들어온 Category 객체의 필드들에 대해,notnull등을 감지하고 검증해 준다
     // 만약 @Valid가 없으면 500으로 서버 에러가 발생하는 반면 @Valid를 추가하면 해당 필드의 형식에 맞는지 검증을 해주기 때문에 틀리면 400에러가 발생함
-    public ResponseEntity<String> createCategory(@Valid @RequestBody Category category){
-        categoryService.createCategory(category);
-        // "Category added successfully"를 클라이언트에 반환하고 상태코드 201반환
-        return new ResponseEntity<>("Category added successfully", HttpStatus.CREATED);
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO categoryDTO){
+        CategoryDTO savedCategoryDTO = categoryService.createCategory(categoryDTO);
+        return new ResponseEntity<>(savedCategoryDTO, HttpStatus.CREATED);
     }
 
     // 카테고리 삭제하는 API추가
