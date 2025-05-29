@@ -42,8 +42,11 @@ public class CategoryServiceImpl implements CategoryService{
 
     @Override
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+        // equalsIgnoreCase는 동등한지 보는데 ASC,asc 다 가능
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
+                // 참일때
                 ? Sort.by(sortBy).ascending()
+                //거짓일때
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
