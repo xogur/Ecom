@@ -1,5 +1,6 @@
 package com.ecommerce.project.exceptions;
 
+// 예외처리 핸들러
 public class ResourceNotFoundException extends RuntimeException {
     String resourceName;
     String field;
