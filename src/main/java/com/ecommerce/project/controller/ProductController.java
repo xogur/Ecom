@@ -13,7 +13,7 @@ import com.ecommerce.project.config.AppConstants;
 import java.io.IOException;
 import jakarta.validation.Valid;
 
-// 주석달기2
+// 주석달기
 
 @RestController
 @RequestMapping("/api")
