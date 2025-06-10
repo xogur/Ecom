@@ -16,7 +16,6 @@ import jakarta.validation.Valid;
 // 주석달기2
 
 @RestController
-//@RequestMapping("/api")
 @RequestMapping("/api")
 public class ProductController {
 
