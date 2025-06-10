@@ -13,7 +13,7 @@ import com.ecommerce.project.config.AppConstants;
 import java.io.IOException;
 import jakarta.validation.Valid;
 
-
+// 주석달기
 
 @RestController
 @RequestMapping("/api")
@@ -29,6 +29,7 @@ public class ProductController {
         return new ResponseEntity<>(savedProductDTO, HttpStatus.CREATED);
     }
 
+    @GetMapping("/public/products")
     public ResponseEntity<ProductResponse> getAllProducts(
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
