@@ -83,6 +83,7 @@ public class ProductServiceImpl implements ProductService {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
+        // 여기서 PageRequest는 스프링에서 지원해주는 페이지를 다루는 객체
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
         Page<Product> pageProducts = productRepository.findAll(pageDetails);
 
