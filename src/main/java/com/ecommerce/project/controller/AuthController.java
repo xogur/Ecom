@@ -7,6 +7,7 @@ import com.ecommerce.project.repositories.UserRepository;
 import com.ecommerce.project.security.request.SignupRequest;
 import com.ecommerce.project.security.response.MessageResponse;
 import jakarta.validation.Valid;
+import com.ecommerce.project.repositories.RoleRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.ecommerce.project.security.jwt.JwtUtils;
 import com.ecommerce.project.security.request.LoginRequest;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuthController {
 
