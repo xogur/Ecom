@@ -233,19 +233,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
-        // Get the product from DB
+
         Product productFromDb = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
         String fileName = fileService.uploadImage(path, image);
 
-        // Updating the new file name to the product
         productFromDb.setImage(fileName);
 
-        // Save updated product
         Product updatedProduct = productRepository.save(productFromDb);
 
-        // return DTO after mapping product to DTO
         return modelMapper.map(updatedProduct, ProductDTO.class);
     }
 
