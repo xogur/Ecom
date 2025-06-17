@@ -13,6 +13,7 @@ import com.ecommerce.project.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ecommerce.project.util.AuthUtil;
 
 import java.util.List;
 import java.util.stream.Stream;
