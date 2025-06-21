@@ -22,15 +22,15 @@ public class Address {
     private Long addressId;
 
     @NotBlank
-    @Size(min = 5, message = "Street name must be atleast 5 characters")
+    @Size(min = 2, message = "Street name must be atleast 5 characters")
     private String street;
 
     @NotBlank
-    @Size(min = 5, message = "Building name must be atleast 5 characters")
+    @Size(min = 2, message = "Building name must be atleast 5 characters")
     private String buildingName;
 
     @NotBlank
-    @Size(min = 4, message = "City name must be atleast 4 characters")
+    @Size(min = 2, message = "City name must be atleast 4 characters")
     private String city;
 
     @NotBlank
