@@ -1,45 +1,33 @@
 package com.ecommerce.project.service;
 
-import org.springframework.stereotype.Service;
+import com.ecommerce.project.exceptions.APIException;
 import com.ecommerce.project.exceptions.ResourceNotFoundException;
+import com.ecommerce.project.model.Cart;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
+import com.ecommerce.project.payload.CartDTO;
 import com.ecommerce.project.payload.ProductDTO;
+import com.ecommerce.project.payload.ProductResponse;
+import com.ecommerce.project.repositories.CartRepository;
 import com.ecommerce.project.repositories.CategoryRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.ecommerce.project.payload.ProductResponse;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
-import com.ecommerce.project.exceptions.APIException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.jpa.domain.Specification;
 
-
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import java.util.UUID;
-
 import java.util.List;
 import java.util.stream.Collectors;
-import com.ecommerce.project.model.Cart;
-import com.ecommerce.project.payload.CartDTO;
-
-import com.ecommerce.project.repositories.CartRepository;
-import java.util.stream.Collectors;
-
-
-
 
 @Service
 public class ProductServiceImpl implements ProductService {
-
     @Autowired
     private CartRepository cartRepository;
 
@@ -95,20 +83,34 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder) {
+    public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String keyword, String category) {
         Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
-        // 여기서 PageRequest는 스프링에서 지원해주는 페이지를 다루는 객체
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Page<Product> pageProducts = productRepository.findAll(pageDetails);
+        Specification<Product> spec = Specification.where(null);
+        if (keyword != null && !keyword.isEmpty()) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("productName")), "%" + keyword.toLowerCase() + "%"));
+        }
+
+        if (category != null && !category.isEmpty()) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.like(root.get("category").get("categoryName"), category));
+        }
+
+        Page<Product> pageProducts = productRepository.findAll(spec, pageDetails);
 
         List<Product> products = pageProducts.getContent();
-        List<ProductDTO> productDTOS = products.stream()
-                .map(product -> modelMapper.map(product, ProductDTO.class))
-                .toList();
 
+        List<ProductDTO> productDTOS = products.stream()
+                .map(product -> {
+                    ProductDTO productDTO = modelMapper.map(product, ProductDTO.class);
+                    productDTO.setImage(constructImageUrl(product.getImage()));
+                    return productDTO;
+                })
+                .toList();
 
         ProductResponse productResponse = new ProductResponse();
         productResponse.setContent(productDTOS);
@@ -117,8 +119,11 @@ public class ProductServiceImpl implements ProductService {
         productResponse.setTotalElements(pageProducts.getTotalElements());
         productResponse.setTotalPages(pageProducts.getTotalPages());
         productResponse.setLastPage(pageProducts.isLast());
-
         return productResponse;
+    }
+
+    private String constructImageUrl(String imageName) {
+        return imageBaseUrl.endsWith("/") ? imageBaseUrl + imageName : imageBaseUrl + "/" + imageName;
     }
 
     @Override
@@ -139,6 +144,7 @@ public class ProductServiceImpl implements ProductService {
         if(products.isEmpty()){
             throw new APIException(category.getCategoryName() + " category does not have any products");
         }
+
         List<ProductDTO> productDTOS = products.stream()
                 .map(product -> modelMapper.map(product, ProductDTO.class))
                 .toList();
@@ -150,7 +156,6 @@ public class ProductServiceImpl implements ProductService {
         productResponse.setTotalElements(pageProducts.getTotalElements());
         productResponse.setTotalPages(pageProducts.getTotalPages());
         productResponse.setLastPage(pageProducts.isLast());
-
         return productResponse;
     }
 
@@ -165,11 +170,7 @@ public class ProductServiceImpl implements ProductService {
 
         List<Product> products = pageProducts.getContent();
         List<ProductDTO> productDTOS = products.stream()
-                .map(product -> {
-                    ProductDTO productDTO = modelMapper.map(product, ProductDTO.class);
-                    productDTO.setImage(constructImageUrl(product.getImage()));
-                    return productDTO;
-                })
+                .map(product -> modelMapper.map(product, ProductDTO.class))
                 .toList();
 
         if(products.isEmpty()){
@@ -183,19 +184,16 @@ public class ProductServiceImpl implements ProductService {
         productResponse.setTotalElements(pageProducts.getTotalElements());
         productResponse.setTotalPages(pageProducts.getTotalPages());
         productResponse.setLastPage(pageProducts.isLast());
-
         return productResponse;
     }
 
     @Override
     public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
-        // Get the existing product from DB
         Product productFromDb = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
         Product product = modelMapper.map(productDTO, Product.class);
 
-        // Update the product info with the one in request body
         productFromDb.setProductName(product.getProductName());
         productFromDb.setDescription(product.getDescription());
         productFromDb.setQuantity(product.getQuantity());
@@ -203,7 +201,6 @@ public class ProductServiceImpl implements ProductService {
         productFromDb.setPrice(product.getPrice());
         productFromDb.setSpecialPrice(product.getSpecialPrice());
 
-        // Save to database
         Product savedProduct = productRepository.save(productFromDb);
 
         List<Cart> carts = cartRepository.findCartsByProductId(productId);
@@ -238,22 +235,15 @@ public class ProductServiceImpl implements ProductService {
         return modelMapper.map(product, ProductDTO.class);
     }
 
-    private String constructImageUrl(String imageName) {
-        return imageBaseUrl.endsWith("/") ? imageBaseUrl + imageName : imageBaseUrl + "/" + imageName;
-    }
-
     @Override
     public ProductDTO updateProductImage(Long productId, MultipartFile image) throws IOException {
-
         Product productFromDb = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
         String fileName = fileService.uploadImage(path, image);
-
         productFromDb.setImage(fileName);
 
         Product updatedProduct = productRepository.save(productFromDb);
-
         return modelMapper.map(updatedProduct, ProductDTO.class);
     }
 

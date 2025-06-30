@@ -8,9 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
     Page<Product> findByCategoryOrderByPriceAsc(Category category, Pageable pageDetails);
 
     Page<Product> findByProductNameLikeIgnoreCase(String keyword, Pageable pageDetails);
