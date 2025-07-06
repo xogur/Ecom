@@ -1,9 +1,6 @@
 package com.ecommerce.project.controller;
 
-import com.ecommerce.project.payload.KakaoPayApproveRequestDto;
-import com.ecommerce.project.payload.KakaoPayApproveResponseDto;
-import com.ecommerce.project.payload.KakaoPayReadyResponseDto;
-import com.ecommerce.project.payload.KakaoPayRequestDto;
+import com.ecommerce.project.payload.*;
 import com.ecommerce.project.service.KakaoPayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,12 +25,14 @@ public class KakaoPayController {
 
     // 결제 성공시 호출되는 콜백
     @GetMapping("/success")
-    public ResponseEntity<Void> kakaoPaySuccess(@RequestParam("pg_token") String pgToken) {
-        String redirectUrl = "http://localhost:5173/payment/success?pg_token=" + pgToken;
-
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(redirectUrl))
-                .build();
+    public ResponseEntity<?> kakaoPaySuccess(@RequestParam("pg_token") String pgToken,
+                                             @RequestParam("userId") String userId) {
+        try {
+            KakaoPayCompleteResponseDto result = kakaoPayService.approvePaymentWithProduct(userId, pgToken);
+            return ResponseEntity.ok(result); // ✅ JSON 반환
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("결제 승인 실패: " + e.getMessage());
+        }
     }
 
     // 사용자가 결제 취소했을 경우
