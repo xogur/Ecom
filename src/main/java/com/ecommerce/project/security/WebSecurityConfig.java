@@ -87,11 +87,13 @@ public class WebSecurityConfig {
                                 .requestMatchers("/v3/api-docs/**").permitAll()
                                 .requestMatchers("/v3/api-docs/**").permitAll()
                                 .requestMatchers("/api/public/**").permitAll()
+                                .requestMatchers("/api/**").permitAll()
                                 //.requestMatchers("/api/admin/**").permitAll()
                                 //.requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
                                 .requestMatchers("/api/test/**").permitAll()
                                 .requestMatchers("/images/**").permitAll()
+                                .requestMatchers("/favicon.ico").permitAll()
                                 .anyRequest().authenticated()
                 );
 
@@ -111,6 +113,11 @@ public class WebSecurityConfig {
                 "/swagger-resources/**",
                 "/configuration/security",
                 "/swagger-ui.html",
+                "/favicon.ico",
+                "/static/**",
+                "/css/**",
+                "/js/**",
+                "/images/**",
                 "/webjars/**"));
     }
 
