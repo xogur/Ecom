@@ -50,8 +50,9 @@ public class KakaoPayController {
     @PostMapping("/approve")
     public ResponseEntity<?> approvePayment(@RequestBody KakaoPayApproveRequestDto dto) {
         try {
-            String userId = "user-001"; // 실제 로그인 사용자 ID 사용 가능
-            KakaoPayApproveResponseDto response = kakaoPayService.approvePayment(userId, dto.getPgToken());
+            String userId = dto.getUserId();
+            String pgToken = dto.getPgToken(); // 실제 로그인 사용자 ID 사용 가능
+            KakaoPayApproveResponseDto response = kakaoPayService.approvePayment(userId, pgToken);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

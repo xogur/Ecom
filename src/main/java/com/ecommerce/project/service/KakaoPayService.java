@@ -26,6 +26,9 @@ public class KakaoPayService {
     private OrderService orderService;
 
     @Autowired
+    private AddressService addressService;
+
+    @Autowired
     private AuthUtil authUtil;
 
     @Value("${kakao.admin-key}")
@@ -59,7 +62,7 @@ public class KakaoPayService {
         params.add("vat_amount", "0");
         params.add("tax_free_amount", "0");
 
-        params.add("approval_url", "http://localhost:8080/api/pay/success?userId=" + requestDto.getUserId());
+        params.add("approval_url", "http://localhost:5173/payment/success?userId=" + requestDto.getUserId());
         params.add("cancel_url", "http://localhost:8080/api/pay/cancel");
         params.add("fail_url", "http://localhost:8080/api/pay/fail");
 
@@ -161,6 +164,9 @@ public class KakaoPayService {
                 orderRequestDTO.getPgStatus(),
                 orderRequestDTO.getPgResponseMessage()
         );
+
+        AddressDTO addressDTO = addressService.getAddressesById(orderRequestDTO.getAddressId());
+        order.setAddress(addressDTO);
 
         // 3. 결제 + 주문 데이터 묶어서 응답
         KakaoPayCompleteResponseDto result = new KakaoPayCompleteResponseDto();
