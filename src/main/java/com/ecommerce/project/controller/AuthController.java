@@ -47,6 +47,8 @@ public class AuthController {
     @Autowired
     PasswordEncoder encoder;
 
+
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication;
@@ -159,4 +161,5 @@ public class AuthController {
                         cookie.toString())
                 .body(new MessageResponse("You've been signed out!"));
     }
+
 }
