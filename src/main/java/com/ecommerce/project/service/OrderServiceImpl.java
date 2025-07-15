@@ -3,8 +3,10 @@ package com.ecommerce.project.service;
 import com.ecommerce.project.exceptions.APIException;
 import com.ecommerce.project.exceptions.ResourceNotFoundException;
 import com.ecommerce.project.model.*;
+import com.ecommerce.project.payload.AddressDTO;
 import com.ecommerce.project.payload.OrderDTO;
 import com.ecommerce.project.payload.OrderItemDTO;
+import com.ecommerce.project.payload.PaymentDTO;
 import com.ecommerce.project.repositories.*;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -104,5 +107,42 @@ public class OrderServiceImpl implements OrderService {
         orderDTO.setAddressId(addressId);
 
         return orderDTO;
+    }
+
+
+    @Override
+    public List<OrderDTO> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(order -> new OrderDTO(
+                        order.getOrderId(),
+                        order.getEmail(),
+                        order.getOrderItems().stream()
+                                .map(item -> new OrderItemDTO(
+                                        item.getOrderItemId(),
+                                        item.getProduct().getProductName(),
+                                        item.getQuantity(),
+                                        item.getOrderedProductPrice()Price()
+                                ))
+                                .collect(Collectors.toList()),
+                        order.getOrderDate(),
+                        new PaymentDTO(
+                                order.getPayment().getId(),
+                                order.getPayment().getMethod(),
+                                order.getPayment().getStatus()
+                        ),
+                        order.getTotalAmount(),
+                        order.getOrderStatus().name(),
+                        order.getAddress().getAddressId(),
+                        new AddressDTO(
+                                order.getAddress().getAddressId(),
+                                order.getAddress().getStreet(),
+                                order.getAddress().getBuildingName(),
+                                order.getAddress().getCity(),
+                                order.getAddress().getState(),
+                                order.getAddress().getCountry(),
+                                order.getAddress().getPincode()
+                        )
+                ))
+                .collect(Collectors.toList());
     }
 }
