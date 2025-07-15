@@ -121,17 +121,17 @@ public class OrderServiceImpl implements OrderService {
                                         item.getOrderItemId(),
                                         item.getProduct().getProductName(),
                                         item.getQuantity(),
-                                        item.getOrderedProductPrice()Price()
+                                        item.getOrderedProductPrice()
                                 ))
                                 .collect(Collectors.toList()),
                         order.getOrderDate(),
                         new PaymentDTO(
-                                order.getPayment().getId(),
-                                order.getPayment().getMethod(),
-                                order.getPayment().getStatus()
+                                order.getPayment().getPaymentId(),
+                                order.getPayment().getPaymentMethod(),
+                                order.getPayment().getPgStatus()
                         ),
                         order.getTotalAmount(),
-                        order.getOrderStatus().name(),
+                        order.getOrderStatus(),
                         order.getAddress().getAddressId(),
                         new AddressDTO(
                                 order.getAddress().getAddressId(),

@@ -1,5 +1,7 @@
 package com.ecommerce.project.payload;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,4 +16,7 @@ public class PaymentDTO {
     private String pgStatus;
     private String pgResponseMessage;
     private String pgName;
+
+    public PaymentDTO(Long paymentId, @NotBlank @Size(min = 4, message = "Payment method must contain at least 4 characters") String paymentMethod, String pgStatus) {
+    }
 }
