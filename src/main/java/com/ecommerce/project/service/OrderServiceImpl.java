@@ -3,10 +3,7 @@ package com.ecommerce.project.service;
 import com.ecommerce.project.exceptions.APIException;
 import com.ecommerce.project.exceptions.ResourceNotFoundException;
 import com.ecommerce.project.model.*;
-import com.ecommerce.project.payload.AddressDTO;
-import com.ecommerce.project.payload.OrderDTO;
-import com.ecommerce.project.payload.OrderItemDTO;
-import com.ecommerce.project.payload.PaymentDTO;
+import com.ecommerce.project.payload.*;
 import com.ecommerce.project.repositories.*;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
@@ -18,6 +15,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
+
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
@@ -119,8 +118,18 @@ public class OrderServiceImpl implements OrderService {
                         order.getOrderItems().stream()
                                 .map(item -> new OrderItemDTO(
                                         item.getOrderItemId(),
-                                        item.getProduct().getProductName(),
+                                        new ProductDTO(
+                                                item.getProduct().getProductId(),
+                                                item.getProduct().getProductName(),
+                                                item.getProduct().getImage(),
+                                                item.getProduct().getDescription(),
+                                                item.getProduct().getQuantity(),
+                                                item.getProduct().getPrice(),
+                                                item.getProduct().getDiscount(),
+                                                item.getProduct().getSpecialPrice()
+                                        ),
                                         item.getQuantity(),
+                                        item.getDiscount(),
                                         item.getOrderedProductPrice()
                                 ))
                                 .collect(Collectors.toList()),
