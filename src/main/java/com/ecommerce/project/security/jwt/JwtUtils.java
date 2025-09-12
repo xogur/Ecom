@@ -31,6 +31,7 @@ public class JwtUtils {
     @Value("${spring.ecom.app.jwtCookieName}")
     private String jwtCookie;
 
+    // HTTP 요청에 포함된 쿠키 중 jwtCookie 이름의 값을 찾아 반환
     public String getJwtFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, jwtCookie);
         if (cookie != null) {
