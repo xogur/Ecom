@@ -11,6 +11,8 @@ import com.ecommerce.project.security.request.SignupRequest;
 import com.ecommerce.project.security.response.MessageResponse;
 import com.ecommerce.project.security.response.UserInfoResponse;
 import com.ecommerce.project.security.services.UserDetailsImpl;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -185,10 +188,20 @@ public class AuthController {
     }
 
     @PostMapping("/signout")
-    public ResponseEntity<?> signoutUser(){
-        ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
-                        cookie.toString())
+    public ResponseEntity<?> signoutUser(HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         Authentication authentication) {
+        // ① 레거시(/api) + 현재(/) 경로 쿠키 모두 삭제
+        ResponseCookie delRoot = jwtUtils.getCleanJwtCookieAtRoot();
+        ResponseCookie delApi  = jwtUtils.getCleanJwtCookieAtApi();
+
+        // ② 시큐리티 컨텍스트/세션 정리(STATELESS라도 안전)
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
+
+        // ③ 다중 Set-Cookie 헤더
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, delRoot.toString())
+                .header(HttpHeaders.SET_COOKIE, delApi.toString())
                 .body(new MessageResponse("You've been signed out!"));
     }
 

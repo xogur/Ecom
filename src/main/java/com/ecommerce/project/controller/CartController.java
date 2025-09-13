@@ -1,6 +1,7 @@
 package com.ecommerce.project.controller;
 
 import com.ecommerce.project.model.Cart;
+import com.ecommerce.project.payload.AddToCartRequestDTO;
 import com.ecommerce.project.payload.CartDTO;
 import com.ecommerce.project.payload.CartItemDTO;
 import com.ecommerce.project.repositories.CartRepository;
@@ -71,4 +72,13 @@ public class CartController {
 
         return new ResponseEntity<String>(status, HttpStatus.OK);
     }
+
+    @PostMapping("/cart/addProduct")
+    public CartDTO addToCart(@RequestBody CartItemDTO data) {
+        Long userId = authUtil.loggedInUserId ();
+        System.out.println ("userId = " + userId);
+        System.out.println ("data = " + data);
+        return null;
+    }
+
 }
