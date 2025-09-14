@@ -78,6 +78,7 @@ public class CartController {
         Long userId = authUtil.loggedInUserId ();
         System.out.println ("userId = " + userId);
         System.out.println ("data = " + data);
+        cartService.addProductToCart ();
         return null;
     }
 

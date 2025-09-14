@@ -40,49 +40,75 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public CartDTO addProductToCart(Long productId, Integer quantity) {
-        Cart cart  = createCart();
+        // 1) 현재 사용자(또는 컨텍스트) 기준 Cart 확보/생성
+        Cart cart = createCart();
 
+        // 2) 상품 조회
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
 
-        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cart.getCartId(), productId);
-
-        if (cartItem != null) {
-            throw new APIException("Product " + product.getProductName() + " already exists in the cart");
-        }
-
+        // 3) 재고 기본 검증
         if (product.getQuantity() == 0) {
             throw new APIException(product.getProductName() + " is not available");
         }
 
-        if (product.getQuantity() < quantity) {
-            throw new APIException("Please, make an order of the " + product.getProductName()
-                    + " less than or equal to the quantity " + product.getQuantity() + ".");
+        // 4) 기존 카트 아이템 조회
+        //    주의: repository 메서드 시그니처 파라미터 순서가 (cartId, productId)인지 (productId, cartId)인지
+        //    현재 프로젝트 정의에 맞게 그대로 두세요.
+        CartItem cartItem = cartItemRepository.findCartItemByProductIdAndCartId(cart.getCartId(), productId);
+
+        if (cartItem != null) {
+            // === 이미 존재하면 수량을 "1"만 증가 ===
+            int newQty = cartItem.getQuantity() + 1;
+
+            // 재고 초과 방지
+            if (newQty > product.getQuantity()) {
+                throw new APIException("Please, make an order of the " + product.getProductName()
+                        + " less than or equal to the quantity " + product.getQuantity() + ".");
+            }
+
+            // 수량 반영
+            cartItem.setQuantity(newQty);
+            cartItemRepository.save(cartItem);
+
+            // 총액에 단가만큼(+1분) 추가
+            cart.setTotalPrice(cart.getTotalPrice() + product.getSpecialPrice());
+            cartRepository.save(cart);
+
+        } else {
+            // === 없으면 새로 추가 (요청 수량 사용) ===
+            if (quantity == null || quantity < 1) {
+                quantity = 1;
+            }
+
+            if (product.getQuantity() < quantity) {
+                throw new APIException("Please, make an order of the " + product.getProductName()
+                        + " less than or equal to the quantity " + product.getQuantity() + ".");
+            }
+
+            CartItem newCartItem = new CartItem();
+            newCartItem.setProduct(product);
+            newCartItem.setCart(cart);
+            newCartItem.setQuantity(quantity);
+            newCartItem.setDiscount(product.getDiscount());
+            newCartItem.setProductPrice(product.getSpecialPrice());
+
+            cartItemRepository.save(newCartItem);
+
+            // 총액 반영
+            cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice() * quantity));
+            cartRepository.save(cart);
         }
 
-        CartItem newCartItem = new CartItem();
+        // ※ product.setQuantity(product.getQuantity());  // 효과 없는 코드이므로 제거
 
-        newCartItem.setProduct(product);
-        newCartItem.setCart(cart);
-        newCartItem.setQuantity(quantity);
-        newCartItem.setDiscount(product.getDiscount());
-        newCartItem.setProductPrice(product.getSpecialPrice());
-
-        cartItemRepository.save(newCartItem);
-
-        product.setQuantity(product.getQuantity());
-
-        cart.setTotalPrice(cart.getTotalPrice() + (product.getSpecialPrice() * quantity));
-
-        cartRepository.save(cart);
-
+        // 5) Cart → DTO 매핑
         CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
 
         List<CartItem> cartItems = cart.getCartItems();
-
         Stream<ProductDTO> productStream = cartItems.stream().map(item -> {
             ProductDTO map = modelMapper.map(item.getProduct(), ProductDTO.class);
-            map.setQuantity(item.getQuantity());
+            map.setQuantity(item.getQuantity()); // 장바구니 상의 수량
             return map;
         });
 
