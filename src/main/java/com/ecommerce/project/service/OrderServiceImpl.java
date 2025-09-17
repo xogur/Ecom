@@ -168,23 +168,44 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
     }
 
+    // Service 구현부 (변경)
     @Override
     @Transactional
-    public Page<OrderDTO> getUserOrders(String userEmail, Pageable pageable) {
+    public Page<OrderDTO> getUserOrders(
+            String userEmail,
+            Pageable pageable,
+            LocalDate startDate,     // yyyy-MM-dd 로 들어온 값(없을 수 있음)
+            LocalDate endDate,       // yyyy-MM-dd 로 들어온 값(없을 수 있음)
+            Integer months           // ✅ 프론트에서 개월수로 보내면 여기로 받음(예: 1,2,3,6,12)
+    ) {
+        // 0) 개월수 → 날짜구간으로 환산 (프론트가 months만 보낸 경우)
+        if ((startDate == null && endDate == null) && months != null && months > 0) {
+            endDate = LocalDate.now();
+            startDate = endDate.minusMonths(months);
+        }
 
-        // 1) where
-        //   (필요 시 status, 기간 필터 추가 가능)
-        var where = order.email.eq(userEmail);
+        // 1) where 구성 (이메일 + 선택적 기간 필터)
+        BooleanBuilder where = new BooleanBuilder();
+        where.and(order.email.eq(userEmail));
+
+        if (startDate != null && endDate != null) {
+            // LocalDate 컬럼이면 그대로 between 사용(양끝 포함)
+            where.and(order.orderDate.between(startDate, endDate));
+        } else if (startDate != null) {
+            where.and(order.orderDate.goe(startDate));
+        } else if (endDate != null) {
+            where.and(order.orderDate.loe(endDate));
+        }
 
         // 2) 정렬 변환
-        var orderSpecifiers = toOrderSpecifiers(pageable.getSort());
+        List<OrderSpecifier<?>> orderSpecifiers = toOrderSpecifiers(pageable.getSort());
 
-        // 3) 1단계: id만 정렬+limit/offset으로 페이지 조회
+        // 3) 1단계: id 페이징
         List<Long> orderIds = queryFactory
                 .select(order.orderId)
                 .from(order)
                 .where(where)
-                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
+                .orderBy(orderSpecifiers.toArray(new OrderSpecifier<?>[0]))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -193,14 +214,15 @@ public class OrderServiceImpl implements OrderService {
             return new PageImpl<>(List.of(), pageable, 0);
         }
 
-        // 4) total count
-        long total = queryFactory
+        // 4) total count (NPE 방지)
+        Long totalL = queryFactory
                 .select(order.orderId.count())
                 .from(order)
                 .where(where)
                 .fetchOne();
+        long total = (totalL == null) ? 0L : totalL;
 
-        // 5) 2단계: 본문 조회 (to-one + 컬렉션 조인)
+        // 5) 2단계: 본문 조회 (+ 아이템 정렬 고정)
         List<Tuple> rows = queryFactory
                 .select(order, orderItem, product, payment, address)
                 .from(order)
@@ -216,10 +238,10 @@ public class OrderServiceImpl implements OrderService {
         Map<Long, OrderDTO> map = new LinkedHashMap<>();
         for (Tuple t : rows) {
             var o    = t.get(order);
-            var oi   = t.get(orderItem);   // null 가능
-            var prd  = t.get(product);     // null 가능
-            var pay  = t.get(payment);     // null 가능
-            var addr = t.get(address);     // null 가능
+            var oi   = t.get(orderItem);
+            var prd  = t.get(product);
+            var pay  = t.get(payment);
+            var addr = t.get(address);
 
             var dto = map.get(o.getOrderId());
             if (dto == null) {
@@ -251,17 +273,17 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // 7) orderIds 순서 유지(안정성)
+        // 7) orderIds 순서 유지
         Map<Long, Integer> idOrder = new HashMap<>();
         for (int i = 0; i < orderIds.size(); i++) idOrder.put(orderIds.get(i), i);
 
         List<OrderDTO> content = new ArrayList<>(map.values());
         content.sort(Comparator.comparingInt(d -> idOrder.getOrDefault(d.getOrderId(), Integer.MAX_VALUE)));
 
-        return new PageImpl<> (content, pageable, total);
+        return new PageImpl<>(content, pageable, total);
     }
 
-    /** Sort → QueryDSL OrderSpecifier 변환 (화이트리스트 방식) */
+    /** Sort → QueryDSL OrderSpecifier 변환 (화이트리스트 방식, 그대로 사용) */
     private List<OrderSpecifier<?>> toOrderSpecifiers(Sort sort) {
         List<OrderSpecifier<?>> specs = new ArrayList<>();
         if (sort == null || sort.isUnsorted()) {
@@ -275,13 +297,13 @@ public class OrderServiceImpl implements OrderService {
                 case "orderId"     -> order.orderId;
                 case "totalAmount" -> order.totalAmount;
                 case "orderStatus" -> order.orderStatus;
-                default            -> order.orderDate; // 미허용 컬럼은 기본값으로
+                default            -> order.orderDate;
             };
             specs.add(s.isAscending() ? path.asc() : path.desc());
         }
-        // 2차 정렬로 안정성 확보
         specs.add(order.orderId.desc());
         return specs;
     }
+
 
 }

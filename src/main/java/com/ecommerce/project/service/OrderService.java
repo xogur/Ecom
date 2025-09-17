@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface OrderService {
@@ -13,6 +14,6 @@ public interface OrderService {
 
     List<OrderDTO> getAllOrders();
 
-    Page<OrderDTO> getUserOrders(String userEmail, Pageable pageable);
+    Page<OrderDTO> getUserOrders(String userEmail, Pageable pageable, LocalDate startDate, LocalDate endDate, Integer months);
 
 }
