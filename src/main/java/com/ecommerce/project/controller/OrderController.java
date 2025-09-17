@@ -5,6 +5,8 @@ import com.ecommerce.project.payload.OrderRequestDTO;
 import com.ecommerce.project.service.OrderService;
 import com.ecommerce.project.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,11 +39,11 @@ public class OrderController {
     }
 
     @GetMapping("/order/users/orders")
-    public String getOrders() {
-        String userEmail = authUtil.loggedInEmail ();
-        List<OrderDTO> result = orderService.getUserOrders (userEmail);
+    public Page<OrderDTO> getOrders(Pageable pageable) {
+        String userEmail = authUtil.loggedInEmail();
+        Page<OrderDTO> result = orderService.getUserOrders (userEmail, pageable);
         System.out.println ("result = " + result);
-        return result.toString ();
+        return result;
     }
 
 }

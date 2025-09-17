@@ -14,9 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.*;
@@ -172,10 +170,37 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public List<OrderDTO> getUserOrders(String userEmail) {
+    public Page<OrderDTO> getUserOrders(String userEmail, Pageable pageable) {
 
-        // 1) 한 번의 조인 쿼리로 주문/아이템/상품/결제/주소를 모두 가져온다.
-        //    (아이템이 없는 주문도 나와야 하므로 left join)
+        // 1) where
+        //   (필요 시 status, 기간 필터 추가 가능)
+        var where = order.email.eq(userEmail);
+
+        // 2) 정렬 변환
+        var orderSpecifiers = toOrderSpecifiers(pageable.getSort());
+
+        // 3) 1단계: id만 정렬+limit/offset으로 페이지 조회
+        List<Long> orderIds = queryFactory
+                .select(order.orderId)
+                .from(order)
+                .where(where)
+                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        if (orderIds.isEmpty()) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        // 4) total count
+        long total = queryFactory
+                .select(order.orderId.count())
+                .from(order)
+                .where(where)
+                .fetchOne();
+
+        // 5) 2단계: 본문 조회 (to-one + 컬렉션 조인)
         List<Tuple> rows = queryFactory
                 .select(order, orderItem, product, payment, address)
                 .from(order)
@@ -183,15 +208,12 @@ public class OrderServiceImpl implements OrderService {
                 .leftJoin(orderItem.product, product)
                 .leftJoin(order.payment, payment)
                 .leftJoin(order.address, address)
-                .where(order.email.eq(userEmail))
-                .orderBy(order.orderDate.desc(),
-                        order.orderId.desc(),
-                        orderItem.orderItemId.asc())
+                .where(order.orderId.in(orderIds))
+                .orderBy(orderSpecifiers.toArray(new OrderSpecifier[0]))
                 .fetch();
 
-        // 2) 주문 단위로 그룹핑하며 DTO를 조립한다.
-        Map<Long, OrderDTO> orderMap = new LinkedHashMap<>();
-
+        // 6) 그룹핑 & DTO 조립
+        Map<Long, OrderDTO> map = new LinkedHashMap<>();
         for (Tuple t : rows) {
             var o    = t.get(order);
             var oi   = t.get(orderItem);   // null 가능
@@ -199,68 +221,67 @@ public class OrderServiceImpl implements OrderService {
             var pay  = t.get(payment);     // null 가능
             var addr = t.get(address);     // null 가능
 
-            Long oid = o.getOrderId();
-
-            // 주문 DTO가 없다면 생성
-            OrderDTO dto = orderMap.get(oid);
+            var dto = map.get(o.getOrderId());
             if (dto == null) {
                 PaymentDTO paymentDTO = (pay == null) ? null : new PaymentDTO(
-                        pay.getPaymentId(),
-                        pay.getPaymentMethod(),
-                        pay.getPgStatus()
+                        pay.getPaymentId(), pay.getPaymentMethod(), pay.getPgStatus()
                 );
-
                 AddressDTO addressDTO = (addr == null) ? null : new AddressDTO(
-                        addr.getAddressId(),
-                        addr.getStreet(),
-                        addr.getBuildingName(),
-                        addr.getCity(),
-                        addr.getState(),
-                        addr.getCountry(),
-                        addr.getPincode()
+                        addr.getAddressId(), addr.getStreet(), addr.getBuildingName(),
+                        addr.getCity(), addr.getState(), addr.getCountry(), addr.getPincode()
                 );
-
                 dto = new OrderDTO(
-                        o.getOrderId(),
-                        o.getEmail(),
-                        new ArrayList<>(),      // 아이템은 아래에서 채움
-                        o.getOrderDate(),
-                        paymentDTO,
-                        o.getTotalAmount(),
-                        o.getOrderStatus(),
-                        (addr != null ? addr.getAddressId() : null),
-                        addressDTO
+                        o.getOrderId(), o.getEmail(), new ArrayList<>(),
+                        o.getOrderDate(), paymentDTO, o.getTotalAmount(),
+                        o.getOrderStatus(), (addr != null ? addr.getAddressId() : null), addressDTO
                 );
-                orderMap.put(oid, dto);
+                map.put(o.getOrderId(), dto);
             }
 
-            // 주문 아이템이 있으면 아이템 DTO 추가
             if (oi != null) {
                 ProductDTO productDTO = (prd == null) ? null : new ProductDTO(
-                        prd.getProductId(),
-                        prd.getProductName(),
-                        prd.getImage(),
-                        prd.getDescription(),
-                        prd.getQuantity(),
-                        prd.getPrice(),
-                        prd.getDiscount(),
-                        prd.getSpecialPrice()
+                        prd.getProductId(), prd.getProductName(), prd.getImage(),
+                        prd.getDescription(), prd.getQuantity(), prd.getPrice(),
+                        prd.getDiscount(), prd.getSpecialPrice()
                 );
-
-                OrderItemDTO orderItemDTO = new OrderItemDTO(
-                        oi.getOrderItemId(),
-                        productDTO,
-                        oi.getQuantity(),
-                        oi.getDiscount(),
-                        oi.getOrderedProductPrice()
-                );
-
-                dto.getOrderItems().add(orderItemDTO);
+                dto.getOrderItems().add(new OrderItemDTO(
+                        oi.getOrderItemId(), productDTO, oi.getQuantity(),
+                        oi.getDiscount(), oi.getOrderedProductPrice()
+                ));
             }
         }
 
-        // 3) 최신 주문 순으로 반환
-        return new ArrayList<>(orderMap.values());
+        // 7) orderIds 순서 유지(안정성)
+        Map<Long, Integer> idOrder = new HashMap<>();
+        for (int i = 0; i < orderIds.size(); i++) idOrder.put(orderIds.get(i), i);
+
+        List<OrderDTO> content = new ArrayList<>(map.values());
+        content.sort(Comparator.comparingInt(d -> idOrder.getOrDefault(d.getOrderId(), Integer.MAX_VALUE)));
+
+        return new PageImpl<> (content, pageable, total);
+    }
+
+    /** Sort → QueryDSL OrderSpecifier 변환 (화이트리스트 방식) */
+    private List<OrderSpecifier<?>> toOrderSpecifiers(Sort sort) {
+        List<OrderSpecifier<?>> specs = new ArrayList<>();
+        if (sort == null || sort.isUnsorted()) {
+            specs.add(order.orderDate.desc());
+            specs.add(order.orderId.desc());
+            return specs;
+        }
+        for (Sort.Order s : sort) {
+            ComparableExpressionBase<?> path = switch (s.getProperty()) {
+                case "orderDate"   -> order.orderDate;
+                case "orderId"     -> order.orderId;
+                case "totalAmount" -> order.totalAmount;
+                case "orderStatus" -> order.orderStatus;
+                default            -> order.orderDate; // 미허용 컬럼은 기본값으로
+            };
+            specs.add(s.isAscending() ? path.asc() : path.desc());
+        }
+        // 2차 정렬로 안정성 확보
+        specs.add(order.orderId.desc());
+        return specs;
     }
 
 }
