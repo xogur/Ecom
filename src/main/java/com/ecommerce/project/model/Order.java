@@ -30,7 +30,7 @@ public class Order {
 
     private LocalDate orderDate;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id")
     private Payment payment;
 
@@ -38,7 +38,7 @@ public class Order {
     private String orderStatus;
 
     // Reference to Address
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
     private Address address;
 }

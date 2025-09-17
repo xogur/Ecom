@@ -38,9 +38,10 @@ public class OrderController {
 
     @GetMapping("/order/users/orders")
     public String getOrders() {
-        String result = authUtil.loggedInEmail ();
+        String userEmail = authUtil.loggedInEmail ();
+        List<OrderDTO> result = orderService.getUserOrders (userEmail);
         System.out.println ("result = " + result);
-        return result;
+        return result.toString ();
     }
 
 }
