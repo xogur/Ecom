@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: sb-ecom
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ecommerce
+    username: postgres
+    password: "4444"
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # show-sql: true
+    # properties:
+    #   hibernate:
+    #     format_sql: true
+
+  # Redis 연결 설정 (백엔드 로컬 실행 기준)
+  redis:
+    host: localhost        # 백엔드도 docker-compose에서 올리면 'redis' 로 변경
+    port: 6379
+    password: your-strong-pass
+    timeout: 3s
+
+  app:
+    jwtSecret: mySecretKey123912738aopsgjnspkmndfsopkvajoirjg94gf2opfng2moknm
+    jwtExpirationMs: 3000000
+
+  ecom:
+    app:
+      jwtCookieName: springBootEcom
+
+project:
+  image: images/
+
+kakao:
+  admin-key: 7e679707628a91ebda0b5da1ffeada38
+
+frontend:
+  url: "http://localhost:5173/"
+
+image:
+  base:
+    url: "http://localhost:8080/images"
+
+logging:
+  level:
+    "org.springframework": DEBUG
+    "org.hibernate.SQL": DEBUG
+    "org.springframework.security": DEBUG
+    "com.ecommerce.project": DEBUG
