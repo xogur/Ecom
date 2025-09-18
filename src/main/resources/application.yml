@@ -20,6 +20,7 @@ spring:
   redis:
     host: localhost        # 백엔드도 docker-compose에서 올리면 'redis' 로 변경
     port: 6379
+    username: default
     password: your-strong-pass
     timeout: 3s
 

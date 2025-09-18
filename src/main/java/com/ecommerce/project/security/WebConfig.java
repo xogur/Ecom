@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${frontend.url}")
     String frontEndUrl;
 
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
