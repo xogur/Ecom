@@ -1,10 +1,18 @@
 package com.ecommerce.project.service.like;
 
+import com.ecommerce.project.model.Product;
+import com.ecommerce.project.model.QProduct;
+import com.ecommerce.project.payload.ProductCardDTO;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -12,27 +20,51 @@ public class RedisLikeService {
 
     private final StringRedisTemplate redis;
 
+    private final JPAQueryFactory queryFactory;
+
+    // 상품 → 사용자 집합
     private String usersKey(long productId) { return "like:prod:" + productId + ":users"; }
+    // 상품별 카운트 캐시
     private String countKey(long productId) { return "like:prod:" + productId + ":count"; }
-    private String userKey(String userEmail) { return userEmail == null ? "" : userEmail.toLowerCase(Locale.ROOT); }
+    // 사용자 → 상품 집합(역인덱스) : "내가 좋아요한 상품들"
+    private String userProductsKey(String userEmail) { return "like:user:" + userKey(userEmail) + ":products"; }
 
-    /** 좋아요 토글: 집합에 사용자를 추가/삭제하고, SCARD로 재계산한 값을 캐시에 반영 */
+    /** 이메일 정규화 (null/blank 방지) */
+    private String userKey(String userEmail) {
+        if (userEmail == null || userEmail.isBlank()) {
+            throw new IllegalArgumentException("userEmail must not be null/blank");
+        }
+        return userEmail.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * 좋아요 토글
+     * - 상품→사용자 집합 갱신
+     * - 사용자→상품 집합(역인덱스)도 함께 갱신
+     * - 정확도를 위해 SCARD로 카운트 재계산 후 캐시에 반영
+     */
     public LikeResult toggle(String userEmail, long productId) {
-        final String uk = usersKey(productId);
-        final String ck = countKey(productId);
-        final String u  = userKey(userEmail);
+        final String u   = userKey(userEmail);
+        final String uk  = usersKey(productId);
+        final String ck  = countKey(productId);
+        final String upk = userProductsKey(userEmail);
 
-        // 이미 좋아요면 제거, 아니면 추가
         boolean liked;
-        Long removed = redis.opsForSet().remove(uk, u);
-        if (removed != null && removed > 0) {
+        // 현재 상태 확인
+        Boolean already = redis.opsForSet().isMember(uk, u);
+        if (Boolean.TRUE.equals(already)) {
+            // 좋아요 해제
+            redis.opsForSet().remove(uk, u);
+            redis.opsForSet().remove(upk, String.valueOf(productId));
             liked = false;
         } else {
+            // 좋아요 추가
             redis.opsForSet().add(uk, u);
+            redis.opsForSet().add(upk, String.valueOf(productId));
             liked = true;
         }
 
-        // 현재 집합 크기로 정확한 카운트 계산 후 캐시에 반영
+        // 집합 크기로 카운트 보정 + 캐시 반영
         Long scard = redis.opsForSet().size(uk);
         long count = (scard == null) ? 0L : scard;
         redis.opsForValue().set(ck, Long.toString(count));
@@ -46,7 +78,7 @@ public class RedisLikeService {
         return Boolean.TRUE.equals(yes);
     }
 
-    /** 현재 상품 좋아요 수 (캐시값 우선, 없으면 SCARD 후 보정) */
+    /** 현재 상품 좋아요 수 (캐시 우선, 없으면 SCARD 후 캐시 갱신) */
     public long getCount(long productId) {
         String v = redis.opsForValue().get(countKey(productId));
         if (v != null) {
@@ -62,25 +94,9 @@ public class RedisLikeService {
     public Map<Long, Long> getCounts(Collection<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) return Map.of();
 
-        // 1) 캐시 조회
-        List<String> keys = productIds.stream().map(this::countKey).toList();
-        List<String> vals = redis.opsForValue().multiGet(keys);
-
         Map<Long, Long> out = new LinkedHashMap<>();
-        int i = 0;
         for (Long pid : productIds) {
-            String v = (vals != null && i < vals.size()) ? vals.get(i) : null;
-            long c;
-            if (v != null) {
-                try { c = Long.parseLong(v); } catch (NumberFormatException e) { c = 0; }
-            } else {
-                // 2) 캐시 미스면 SCARD로 보정 후 캐시 업데이트
-                Long scard = redis.opsForSet().size(usersKey(pid));
-                c = (scard == null) ? 0L : scard;
-                redis.opsForValue().set(countKey(pid), Long.toString(c));
-            }
-            out.put(pid, c);
-            i++;
+            out.put(pid, getCount(pid)); // 캐시 미스 시 SCARD로 보정
         }
         return out;
     }
@@ -96,6 +112,36 @@ public class RedisLikeService {
         }
         return out;
     }
+
+    // --------------------------
+    // ✅ 프로필용: 내가 좋아요한 상품 목록 지원
+    // --------------------------
+
+    /** 내가 좋아요한 상품 총 개수 */
+    public long getUserLikesTotal(String userEmail) {
+        Long size = redis.opsForSet().size(userProductsKey(userEmail));
+        return size == null ? 0L : size;
+    }
+
+    /**
+     * 내가 좋아요한 상품 id 목록 페이징 (간단 버전: SMEMBERS 후 정렬/슬라이싱)
+     * - 규모가 커지면 ZSET(시간/ID 스코어)로 교체 권장
+     */
+    public List<Long> getUserLikedProductIds(String userEmail, int offset, int limit) {
+        Set<String> raw = redis.opsForSet().members(userProductsKey(userEmail));
+        if (raw == null || raw.isEmpty()) return List.of();
+
+        List<Long> ids = raw.stream()
+                .map(s -> { try { return Long.parseLong(s); } catch (Exception e) { return null; }})
+                .filter(Objects::nonNull)
+                .sorted(Comparator.reverseOrder()) // 큰 ID(최근) 우선
+                .collect(Collectors.toList());
+
+        int from = Math.min(offset, ids.size());
+        int to   = Math.min(offset + limit, ids.size());
+        return ids.subList(from, to);
+    }
+
 
     public record LikeResult(boolean liked, long count) {}
 }
