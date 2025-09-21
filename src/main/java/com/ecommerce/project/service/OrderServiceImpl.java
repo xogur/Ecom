@@ -5,6 +5,8 @@ import com.ecommerce.project.exceptions.ResourceNotFoundException;
 import com.ecommerce.project.model.*;
 import com.ecommerce.project.payload.*;
 import com.ecommerce.project.repositories.*;
+import com.ecommerce.project.repositories.point.PointService;
+import com.ecommerce.project.util.AuthUtil;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
@@ -31,6 +33,9 @@ import static com.ecommerce.project.model.QAddress.address;
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
+    PointService pointService;
+
+    @Autowired
     CartRepository cartRepository;
 
     @Autowired
@@ -54,7 +59,13 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     ProductRepository productRepository;
 
+    @Autowired
+    private AuthUtil authUtil;
+
     private final JPAQueryFactory queryFactory;
+    private final UserRepository userRepository;
+
+
 
     @Override
     @Transactional
@@ -63,6 +74,19 @@ public class OrderServiceImpl implements OrderService {
         if (cart == null) {
             throw new ResourceNotFoundException("Cart", "email", emailId);
         }
+
+        long cartTotal = Math.round(cart.getTotalPrice());
+
+        User user = userRepository.findByEmail(emailId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", emailId));
+
+        // (선택) 프리뷰로 서버에서 한번 더 계산하여 조작 방지
+        long pointsToUse = 0L; // TODO: 프론트에서 넘어온 값으로 교체
+        var p = pointService.preview(user.getUserId(), cartTotal, Math.max(0, pointsToUse));
+        long allowedUse = p.getPointsToUse();
+        long finalPay   = p.getFinalPay();
+        long willEarn   = p.getWillEarn();
+
 
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Address", "addressId", addressId));
@@ -98,6 +122,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orderItems = orderItemRepository.saveAll(orderItems);
+        pointService.settleAfterOrder(user, cartTotal, 0, savedOrder.getOrderId ());
 
         cart.getCartItems().forEach(item -> {
             int quantity = item.getQuantity();
