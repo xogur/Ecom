@@ -1,5 +1,8 @@
 package com.ecommerce.project.security;
 
+import com.ecommerce.project.security.oauth2.CustomOAuth2UserService;
+import com.ecommerce.project.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +18,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,14 +39,15 @@ import java.util.Set;
 // 나 JWT쓸거임
 @EnableWebSecurity
 //@EnableMethodSecurity
+@RequiredArgsConstructor
 public class WebSecurityConfig {
 
-    // 사용자 정보
-    @Autowired
-    UserDetailsServiceImpl userDetailsService;
 
-    @Autowired
-    private AuthEntryPointJwt unauthorizedHandler;
+    private final UserDetailsServiceImpl userDetailsService;                // 폼 로그인/JWT용 사용자 조회
+    private final AuthEntryPointJwt unauthorizedHandler;                    // 401 처리
+    private final CustomOAuth2UserService oAuth2UserService;               // 구글 사용자 정보 매핑
+    private final OAuth2AuthenticationSuccessHandler successHandler;       // OAuth2 성공 시 JWT 쿠키 발급/리다이렉트
+    private final PasswordEncoder passwordEncoder;
 
     // 요청된 jwt토큰을 확인하기 위해
     @Bean
@@ -53,12 +58,10 @@ public class WebSecurityConfig {
 
     // 사용자 인증, 로그인을 처리
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService uds) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-
+        authProvider.setUserDetailsService(uds);
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
@@ -69,10 +72,10 @@ public class WebSecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-    @Bean
-    public PasswordEncoder   passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+//    @Bean
+//    public PasswordEncoder   passwordEncoder() {
+//        return new BCryptPasswordEncoder();
+//    }
 
 
 
@@ -88,6 +91,7 @@ public class WebSecurityConfig {
                                 .requestMatchers("/v3/api-docs/**").permitAll()
                                 .requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/api/**").permitAll()
+                                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                                 //.requestMatchers("/api/admin/**").permitAll()
                                 //.requestMatchers("/api/public/**").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
@@ -95,13 +99,22 @@ public class WebSecurityConfig {
                                 .requestMatchers("/images/**").permitAll()
                                 .requestMatchers("/favicon.ico").permitAll()
                                 .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth -> oauth
+                        .authorizationEndpoint(a -> a.baseUri("/oauth2/authorization")) // /oauth2/authorization/google
+                        .redirectionEndpoint(r -> r.baseUri("/login/oauth2/code/*"))
+                        .userInfoEndpoint(u -> u.userService(oAuth2UserService))
+                        .successHandler(successHandler) // 성공 시 JWT 쿠키 발급 + 프론트로 리다이렉트
                 );
 
-        http.authenticationProvider(authenticationProvider());
+        // DaoAuthenticationProvider 등록
+        http.authenticationProvider(authenticationProvider(userDetailsService));
 
+        // JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 위치
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-        http.headers(headers -> headers.frameOptions(
-                frameOptions -> frameOptions.sameOrigin()));
+
+        // (선택) sameOrigin 허용 (H2 콘솔/프레임 쓰는 경우)
+        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
     }

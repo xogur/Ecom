@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -23,8 +24,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +44,9 @@ public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Value("${frontend.url:http://localhost:5173/}")
+    private String frontendUrl;
 
     @Autowired
     UserRepository userRepository;
@@ -203,6 +210,65 @@ public class AuthController {
                 .header(HttpHeaders.SET_COOKIE, delRoot.toString())
                 .header(HttpHeaders.SET_COOKIE, delApi.toString())
                 .body(new MessageResponse("You've been signed out!"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication authentication) {
+        // 1) 비로그인 처리
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Object principal = authentication.getPrincipal();
+        Long id = null;
+        String username;
+        List<String> roles;
+
+        if (principal instanceof UserDetailsImpl u) {
+            id = u.getId();
+            username = u.getUsername();
+            roles = u.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+
+        } else if (principal instanceof org.springframework.security.oauth2.core.oidc.user.OidcUser oidc) {
+            // OAuth2(OIDC) 로그인 케이스
+            username = oidc.getEmail(); // 또는 oidc.getPreferredUsername()
+            roles = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+            // 필요 시 DB에서 email로 사용자 찾아 id/roles 매핑
+            // id = userRepository.findByEmail(username).map(User::getUserId).orElse(null);
+
+        } else if (principal instanceof org.springframework.security.oauth2.core.user.DefaultOAuth2User oauth2) {
+            username = String.valueOf(oauth2.getAttributes().getOrDefault("email", oauth2.getName()));
+            roles = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+            // 필요 시 DB 조회로 id 매핑
+            // id = userRepository.findByEmail(username).map(User::getUserId).orElse(null);
+
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(new UserInfoResponse(id, username, roles));
+    }
+
+    @GetMapping("/success")
+    public ResponseEntity<Void> oauthSuccess(@AuthenticationPrincipal OAuth2User principal) {
+        String email = (String) principal.getAttributes().get("email");
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(UserDetailsImpl.build(user));
+
+        // 302 + Set-Cookie + Location
+        return ResponseEntity.status(302)
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.LOCATION, frontendUrl + "oauth/success?login=success")
+                .build();
     }
 
 }

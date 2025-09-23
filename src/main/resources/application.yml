@@ -11,14 +11,9 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    # show-sql: true
-    # properties:
-    #   hibernate:
-    #     format_sql: true
 
-  # Redis 연결 설정 (백엔드 로컬 실행 기준)
   redis:
-    host: localhost        # 백엔드도 docker-compose에서 올리면 'redis' 로 변경
+    host: localhost
     port: 6379
     username: default
     password: your-strong-pass
@@ -31,6 +26,31 @@ spring:
   ecom:
     app:
       jwtCookieName: springBootEcom
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+
+            scope:
+              - email
+              - profile
+            # 기본값이기도 하지만 명시 OK
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:            # ← registration 과 같은 레벨
+          google:
+            issuer-uri: https://accounts.google.com
+
+server:
+  forward-headers-strategy: framework  # 프록시 뒤에서 baseUrl 재구성 안전장치
+
+app:
+  oauth2:
+    redirect-success: ${OAUTH2_REDIRECT_SUCCESS:http://localhost:5173/}
+    redirect-failure: ${OAUTH2_REDIRECT_FAILURE:http://localhost:5173/oauth/failure}
+  cors:
+    allowed-origins: "http://localhost:5173,http://localhost:3000"
 
 project:
   image: images/
