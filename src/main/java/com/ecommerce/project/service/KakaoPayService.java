@@ -66,6 +66,7 @@ public class KakaoPayService {
         params.add("cancel_url", "http://localhost:8080/api/pay/cancel");
         params.add("fail_url", "http://localhost:8080/api/pay/fail");
 
+        System.out.println ("totalPrice = " + requestDto.getTotalPrice());
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
         KakaoPayReadyResponseDto response = restTemplate.postForObject(
