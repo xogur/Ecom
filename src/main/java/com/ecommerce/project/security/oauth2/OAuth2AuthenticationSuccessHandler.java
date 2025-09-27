@@ -29,7 +29,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     private final JwtUtils jwtUtils;
 
     // 성공 후 이동할 프론트 URL (application.yml의 frontend.url 사용)
-    @Value("${frontend.url:http://localhost:5173/}")
+    @Value("${frontend.url}")
     private String frontendUrl;
 
     @Override

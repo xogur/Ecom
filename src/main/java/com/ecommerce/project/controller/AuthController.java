@@ -45,7 +45,7 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @Value("${frontend.url:http://localhost:5173/}")
+    @Value("${frontend.url}")
     private String frontendUrl;
 
     @Autowired
