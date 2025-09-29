@@ -13,7 +13,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   redis:
-    host: localhost
+    host: 13.209.199.59
     port: 6379
     username: default
     password: ${REDIS_PASSWORD:}
