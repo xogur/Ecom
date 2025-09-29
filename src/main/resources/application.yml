@@ -16,7 +16,7 @@ spring:
     host: localhost
     port: 6379
     username: default
-    password: your-strong-pass
+    password: ${REDIS_PASSWORD:}
     timeout: 3s
 
   app:
@@ -32,6 +32,8 @@ spring:
       client:
         registration:
           google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
 
             scope:
               - email
@@ -56,7 +58,7 @@ project:
   image: images/
 
 kakao:
-  admin-key: 7e679707628a91ebda0b5da1ffeada38
+  admin-key: ${KAKAO_ADMIN_KEY}
 
 frontend:
   url: "http://localhost:5173/"
