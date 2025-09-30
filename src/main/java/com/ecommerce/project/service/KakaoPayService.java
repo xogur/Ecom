@@ -19,6 +19,9 @@ import java.util.Map;
 @Service
 public class KakaoPayService {
 
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -62,7 +65,8 @@ public class KakaoPayService {
         params.add("vat_amount", "0");
         params.add("tax_free_amount", "0");
 
-        params.add("approval_url", "http://localhost:5173/payment/success?userId=" + requestDto.getUserId());
+//        params.add("approval_url", "http://localhost:5173/payment/success?userId=" + requestDto.getUserId());
+        params.add("approval_url", frontendUrl + "payment/success?userId=" + requestDto.getUserId());
         params.add("cancel_url", "http://localhost:8080/api/pay/cancel");
         params.add("fail_url", "http://localhost:8080/api/pay/fail");
 
