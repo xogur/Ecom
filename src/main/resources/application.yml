@@ -49,7 +49,7 @@ server:
 
 app:
   oauth2:
-    redirect-success: https://3.36.230.224.sslip.io/
+    redirect-success: "https://3.36.230.224.sslip.io/oauth/success"
     redirect-failure: https://3.36.230.224.sslip.io/oauth/failure
   cors:
     allowed-origins: "http://localhost:5173,http://localhost:3000,https://3.36.230.224.sslip.io"
