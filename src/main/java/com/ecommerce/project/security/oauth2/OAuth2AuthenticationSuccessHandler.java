@@ -46,6 +46,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
 
         // 프론트에서 상태 동기화하는 브리지 경로로 리다이렉트
-        response.sendRedirect(frontendUrl + "oauth/success?login=success");
+        response.sendRedirect(frontendUrl + "/oauth/success?login=success");
     }
 }
