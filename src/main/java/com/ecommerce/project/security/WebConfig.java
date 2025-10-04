@@ -16,6 +16,10 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowCredentials(true)
+                .allowedOriginPatterns(
+                        "https://*.sslip.io",
+                        "https://*.nip.io"
+                )
                 .allowedOrigins("http://localhost:3000", frontEndUrl)
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
                 .allowedHeaders("*")

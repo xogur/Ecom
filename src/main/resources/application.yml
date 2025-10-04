@@ -3,7 +3,7 @@ spring:
     name: sb-ecom
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/ecommerce
+    url: jdbc:postgresql://13.209.199.59:5432/ecommerce
     username: postgres
     password: "4444"
 
@@ -52,7 +52,7 @@ app:
     redirect-success: ${OAUTH2_REDIRECT_SUCCESS:http://localhost:5173/}
     redirect-failure: ${OAUTH2_REDIRECT_FAILURE:http://localhost:5173/oauth/failure}
   cors:
-    allowed-origins: "http://localhost:5173,http://localhost:3000"
+    allowed-origins: "http://localhost:5173,http://localhost:3000,https://3.36.230.224.sslip.io"
 
 project:
   image: images/
@@ -61,11 +61,11 @@ kakao:
   admin-key: ${KAKAO_ADMIN_KEY}
 
 frontend:
-  url: "http://localhost:5173/"
+  url: "https://3.36.230.224.sslip.io"
 
 image:
   base:
-    url: "http://localhost:8080/images"
+    url: "http://3.37.185.207/images"
 
 logging:
   level:
