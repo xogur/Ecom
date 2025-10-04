@@ -28,9 +28,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build with Maven
-        run: |
-          ./mvnw -q -DskipTests clean package
-          ls -al target
+        run: mvn -B -DskipTests clean package
 
       - name: Find built jar
         id: jar
