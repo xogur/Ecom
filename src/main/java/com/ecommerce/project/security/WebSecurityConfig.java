@@ -101,8 +101,8 @@ public class WebSecurityConfig {
                                 .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth
-                        .authorizationEndpoint(a -> a.baseUri("/oauth2/authorization/*")) // /oauth2/authorization/google
-                        .redirectionEndpoint(r -> r.baseUri("/login/oauth2/code/*"))
+//                        .authorizationEndpoint(a -> a.baseUri("/oauth2/authorization/*")) // /oauth2/authorization/google
+//                        .redirectionEndpoint(r -> r.baseUri("/login/oauth2/code/*"))
                         .userInfoEndpoint(u -> u.userService(oAuth2UserService))
                         .successHandler(successHandler) // 성공 시 JWT 쿠키 발급 + 프론트로 리다이렉트
                 );
